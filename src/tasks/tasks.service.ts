@@ -16,8 +16,16 @@ export class TasksService {
     return this.taskRepository.save(createTaskDto);
   }
 
-  findAll() {
-    return this.taskRepository.find();
+  async findAll(): Promise<Task[]> {
+    try {
+      const taskList = await this.taskRepository.find({
+        order: { createdAt: 'DESC' }, // Specify the column name and sort order as an object
+      });
+      return taskList;
+    } catch (error) {
+      console.error('Error fetching taskList:', error);
+      throw error;
+    }
   }
 
   async findOne(id: string) {

@@ -47,8 +47,9 @@ export class AuthService {
       const isValid = bcrypt.compareSync(user.password, userDetails.password);
       if (isValid) {
         return {
-          status: HttpStatus.CREATED,
-          msg: {
+          statusCode: HttpStatus.CREATED,
+          message: 'User logged in successfully.',
+          data: {
             email: user.email,
             access_token: this.jwtService.sign(
               { email: user.email },
@@ -87,8 +88,8 @@ export class AuthService {
       });
       if (isOk) {
         return {
-          status: HttpStatus.CREATED,
-          content: { msg: `User has been registred successfully.` },
+          statusCode: HttpStatus.CREATED,
+          message: `User has been registered successfully.`,
         };
       } else {
         throw new BadRequestException('User already exists');

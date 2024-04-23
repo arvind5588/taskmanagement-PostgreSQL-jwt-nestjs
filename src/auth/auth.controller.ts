@@ -9,13 +9,13 @@ export class AuthController {
   @Post('login')
   async login(@Req() req, @Res() res, @Body() body) {
     const auth = await this.authService.login(body);
-    res.status(auth.status).json(auth.msg);
+    res.status(auth.statusCode).json(auth);
   }
 
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   @Post('register')
   async register(@Req() req, @Res() res, @Body() body) {
     const auth = await this.authService.createUser(body);
-    res.status(auth.status).json(auth.content);
+    res.status(auth.statusCode).json(auth);
   }
 }
