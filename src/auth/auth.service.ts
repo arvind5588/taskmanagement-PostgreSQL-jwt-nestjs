@@ -12,6 +12,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Users } from './entities/users.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { ERROR_MESSAGES } from '../utils/messages';
 
 @Injectable()
 export class AuthService {
@@ -30,7 +31,12 @@ export class AuthService {
 
     await validate(userDTO).then((errors) => {
       if (errors.length > 0) {
+        const errorMessages = errors
+          .map((error) => Object.values(error.constraints))
+          .flat();
+        this.logger.debug(`${errorMessages}`, AuthService.name);
         this.logger.debug(`${errors}`, AuthService.name);
+        throw new BadRequestException(errorMessages);
       } else {
         isOk = true;
       }
@@ -41,7 +47,7 @@ export class AuthService {
         where: { email: user.email },
       });
       if (userDetails == null) {
-        throw new UnauthorizedException('Invalid credentials');
+        throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
       }
 
       const isValid = bcrypt.compareSync(user.password, userDetails.password);
@@ -60,10 +66,10 @@ export class AuthService {
           },
         };
       } else {
-        throw new UnauthorizedException('Invalid credentials');
+        throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
       }
     } else {
-      throw new BadRequestException('Invalid credentials');
+      throw new BadRequestException(ERROR_MESSAGES.INVALID_INPUT);
     }
   }
 
@@ -72,16 +78,21 @@ export class AuthService {
 
     const userDTO = new UsersDTO();
     userDTO.email = body.email;
-    userDTO.password = bcrypt.hashSync(body.password, 10);
+    userDTO.password = body.password;
 
     await validate(userDTO).then((errors) => {
       if (errors.length > 0) {
-        this.logger.debug(`${errors}`, AuthService.name);
+        const errorMessages = errors
+          .map((error) => Object.values(error.constraints))
+          .flat();
+        this.logger.debug(`${errorMessages}`, AuthService.name);
+        throw new BadRequestException(errorMessages);
       } else {
         isOk = true;
       }
     });
     if (isOk) {
+      userDTO.password = bcrypt.hashSync(body.password, 10);
       await this.usersRepository.save(userDTO).catch((error) => {
         this.logger.debug(error.message, AuthService.name);
         isOk = false;
@@ -89,13 +100,13 @@ export class AuthService {
       if (isOk) {
         return {
           statusCode: HttpStatus.CREATED,
-          message: `User has been registered successfully.`,
+          message: ERROR_MESSAGES.REGISTRATION_SUCCESS,
         };
       } else {
-        throw new BadRequestException('User already exists');
+        throw new BadRequestException(ERROR_MESSAGES.USER_EXIST);
       }
     } else {
-      throw new BadRequestException('Invalid content');
+      throw new BadRequestException(ERROR_MESSAGES.INVALID_INPUT);
     }
   }
 }
